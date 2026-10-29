@@ -9,7 +9,7 @@
 | 来源 | WorkBuddy 内置技能市场（**不是** skills.sh / `npx skills` / skills-manager-cli 生态） |
 | 下载方式 | 技能市场检索安装工具 `search_and_install_skills`（`action=install`，`skill_names` 传下方 name）；或在 WorkBuddy 应用内技能市场页安装 |
 | 更新方式 | 市场**无独立 update 命令**，重新执行安装即覆盖更新；更新前先对比本表 version 与各技能 `_skillhub_meta.json` 的 version，有变化再重新安装并同步本目录副本 |
-| 安装落点（用户级） | `C:\Users\Administrator\.workbuddy\skills\<name>\` |
+| 安装落点（用户级） | `%USERPROFILE%\.workbuddy\skills\<name>\` |
 | 本目录性质 | vendored 副本（2026-10-24 复制），保留 `_skillhub_meta.json` 作为来源凭据 |
 
 ## 技能清单

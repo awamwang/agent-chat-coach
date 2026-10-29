@@ -134,8 +134,13 @@ v1 由 Agent 现场执行（任何加载了本技能的 Agent）：
 > 用户在网页粘贴提示词、选风格 → 桥唤醒宿主会话 → 教练判定 →
 > `submit_answer` 回推 → 网页按三区结构渲染（结论加粗、存档块可折叠）
 
-本技能已落地在 `G:\Projects\19AI\skills\agent-chat-coach`（`awam-` 前缀约定按你的
+本技能已落地在 `<个人技能仓库>\agent-chat-coach`（`awam-` 前缀约定按你的
 要求改成了语义化的 `agent-chat-`），由 WorkBuddy 技能机制加载，流程不变。
+
+> **占位符约定**：`<skill-root>` = 本技能根目录；`<bridge-repo>` = 外接桥仓库，默认与本技能
+> 同级（`<skill-root>\..\..\workbuddy-bidge`），可用环境变量 `BRIDGE_REPO` 覆盖；
+> `<个人技能仓库>` = 你的技能仓库根目录。写成占位符是为了让本仓能直接公开——
+> 本机实跑时把它们替换成真实路径即可。
 
 ## 路线图
 

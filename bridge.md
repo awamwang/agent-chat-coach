@@ -5,7 +5,7 @@
 被唤醒后怎么应答。
 
 宿主桥本身的能力（多宿主路由、SSE、幂等去重、故障排查）见另一份技能
-`awam-external-bridge`（仓库 `G:\Projects\19AI\workbuddy-bidge`，端口 **8913**），
+`awam-external-bridge`（桥仓库，默认 `<技能目录>\..\..\workbuddy-bidge`，端口 **8913**），
 本文件不重复，只写「教练接上去」的部分。
 
 ## 三个角色

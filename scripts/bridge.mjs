@@ -8,25 +8,26 @@
  *   3. 报状态     服务 / 页面 / 宿主 / MCP 注册与信任
  *
  * 用法（绝对路径跑，别依赖 cwd）：
- *   node G:\Projects\19AI\skills\agent-chat-coach\scripts\bridge.mjs
+ *   node <skill-root>\scripts\bridge.mjs
  *   node ...\bridge.mjs --init      检查宿主桥通信的支持环境是否成立（只读）
  *   node ...\bridge.mjs --check     只体检，不动任何东西
  *   node ...\bridge.mjs --sync      只同步页面
  *   node ...\bridge.mjs --start     只起服务（已在跑就复用）
  *   node ...\bridge.mjs --open      起好后顺手打开浏览器
  *
- * 仓库路径可用环境变量 BRIDGE_REPO 覆盖，默认 G:\Projects\19AI\workbuddy-bidge。
+ * 桥仓库路径默认取技能目录的兄弟位置（<skill-root>\..\..\workbuddy-bidge），
+ * 换机器或换布局时用环境变量 BRIDGE_REPO 覆盖。
  * 零第三方依赖，Node >= 18。
  */
 
 import { spawn, execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 
 const SKILL_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
-const REPO = process.env.BRIDGE_REPO || "G:\\Projects\\19AI\\workbuddy-bidge";
+const REPO = process.env.BRIDGE_REPO || resolve(SKILL_DIR, "..", "..", "workbuddy-bidge");
 const PORT = Number(process.env.BRIDGE_PORT || 8913);
 const BASE = `http://127.0.0.1:${PORT}`;
 

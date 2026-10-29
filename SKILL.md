@@ -162,7 +162,7 @@ description: >
 1. **跑启动器**（绝对路径、幂等，别依赖 cwd）：
 
    ```bash
-   node "G:\Projects\19AI\skills\agent-chat-coach\scripts\bridge.mjs"
+   node "<skill-root>\scripts\bridge.mjs"
    ```
 
    它会同步页面 → 8913 没起就拉起 → 报服务 / 页面 / MCP 注册 / 信任 / 在线宿主。
@@ -175,15 +175,15 @@ description: >
 
      ```bash
      # A 心跳：让宿主在网页上一直显示在线（后台常驻，不退）
-     node "G:\Projects\19AI\skills\agent-chat-coach\scripts\host.mjs" --heartbeat --id coach-local --label "教练 · 本机"
+     node "<skill-root>\scripts\host.mjs" --heartbeat --id coach-local --label "教练 · 本机"
      # B 订阅：长挂等新问题；收到就打印问题并退出（退出事件用来唤醒 Agent）
-     node "G:\Projects\19AI\skills\agent-chat-coach\scripts\host.mjs" --id coach-local --label "教练 · 本机"
+     node "<skill-root>\scripts\host.mjs" --id coach-local --label "教练 · 本机"
      ```
 
      被唤醒后按下面的流程判完，用 CLI 提交回答并**重新挂 B**：
 
      ```bash
-     node "G:\Projects\19AI\skills\agent-chat-coach\scripts\reply.mjs" --id <问题id> --file <回答.md>
+     node "<skill-root>\scripts\reply.mjs" --id <问题id> --file <回答.md>
      ```
 
      两条进程同一 `--id`：A 保在线，B 收问题。A 断了网页会报「链路不通」。
@@ -194,7 +194,7 @@ description: >
      （无地址栏、独立 profile，像原生程序）；局域网设备用 `http://<内网IP>:8913/web/coach.html`
 
    说明要点：网页顶部可切宿主；发送前会检查链路，报「链路不通」就是桥没挂或掉线。
-   要跨会话常驻，请用户双击 `G:\Projects\19AI\workbuddy-bidge\start-keepalive.cmd`
+   要跨会话常驻，请用户双击 `<bridge-repo>\start-keepalive.cmd`（桥仓库默认在技能目录的兄弟位置：`..\..\workbuddy-bidge`）
    —— 从会话里起的进程活不过会话结束，**不要承诺已常驻**。
 
 ### 被桥唤醒时（网页提交了一条）

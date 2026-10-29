@@ -6,25 +6,31 @@ rem  Uses its own profile dir so it never mixes with your
 rem  daily browser windows.
 rem
 rem  Requires: bridge service on 8913. If it is down, run
-rem  G:\Projects\19AI\workbuddy-bidge\start-keepalive.cmd first.
+rem  start-keepalive.cmd in the bridge repo. The bridge repo is
+rem  expected next to the skills dir (..\..\workbuddy-bidge);
+rem  set BRIDGE_REPO in the environment to point elsewhere.
 rem
-rem  NOTE: keep this file ASCII-only. cmd.exe parses .cmd with the
-rem  console codepage (GBK here), so non-ASCII comments garble and
-rem  break lines.
+rem  NOTE: keep this file ASCII-only and free of literal drive
+rem  letters. cmd.exe parses .cmd with the console codepage
+rem  (GBK here), so non-ASCII comments garble and break lines;
+rem  hardcoded drive letters make the file useless on other
+rem  machines, so use %ProgramFiles% / %~dp0 instead.
 rem ============================================================
 setlocal
 
 set "URL=http://127.0.0.1:8913/web/coach.html"
 set "PROFILE=%LOCALAPPDATA%\Temp\acc-app-profile"
-set "EDGE=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-set "EDGE64=C:\Program Files\Microsoft\Edge\Application\msedge.exe"
-set "CHROME=C:\Program Files\Google\Chrome\Application\chrome.exe"
-set "CHROME86=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+set "KEEPALIVE=%~dp0..\..\workbuddy-bidge\start-keepalive.cmd"
+if defined BRIDGE_REPO set "KEEPALIVE=%BRIDGE_REPO%\start-keepalive.cmd"
+set "EDGE=%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
+set "EDGE64=%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"
+set "CHROME=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
+set "CHROME86=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
 
 powershell -NoProfile -Command "try { (Invoke-WebRequest -UseBasicParsing -TimeoutSec 3 '%URL%').StatusCode } catch { exit 1 }" >nul 2>&1
 if errorlevel 1 (
   echo [X] Bridge service 8913 is not running.
-  echo     Start it first: G:\Projects\19AI\workbuddy-bidge\start-keepalive.cmd
+  echo     Start it first: %KEEPALIVE%
   echo     Then run this launcher again.
   pause
   exit /b 1
