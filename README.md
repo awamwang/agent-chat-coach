@@ -1,5 +1,7 @@
 # 反向输出师（agent-chat-coach）
 
+> **实验性项目**：本仓库用于探索与验证「AI 沟通有效性判定」的思路与流程，**不具有生产实用性**，请勿用于正式业务或生产环境。
+
 AI 沟通有效性教练：用户把「自己发给 AI 的提示词 / 一段聊天」喂进来，教练判定这段
 沟通是否有效、给出纠正方向。**只判定 + 纠正，不代写、不执行。**
 
@@ -79,9 +81,16 @@ SSE 回推网页。接入契约（消息信封 / 唤醒应答 / 页面部署 / �
 ├── SKILL.md           # 技能入口：五步流程协议 + 调用方契约 + 两个入口
 ├── rules.md           # 规则层：R0-R4 + 验证环并案 + 答复定性 + 报告格式
 ├── providers.md       # Provider 层：评价能力提供者（概念/契约/清单/接入）
-├── providers/free/SKILL.md  # 第一方 Provider：自由 Provider（默认，agent 场景）
-├── workspace.md       # 封闭工作空间 + 验证环规范（安全纪律/重算语义）
+├── providers/         # Provider 落点（第一方 + vendored）
+│   ├── free/SKILL.md  #   第一方默认：自由 Provider（agent 场景）
+│   ├── agent-buddy/   #   备用 Provider v1.0.5（vendored）
+│   ├── prompt-expert/ #   可接入（未接）
+│   ├── prompt-engineering-expert/  # 可接入（未接）
+│   └── VENDORED.md    #   第三方来源与落点登记
 ├── generators.md      # 范例生成器：studio 转任「优秀学生案例」
+├── generators/        # 范例生成器落点（非 Provider）
+│   └── prompt-engineering-studio/
+├── workspace.md       # 封闭工作空间 + 验证环规范（安全纪律/重算语义）
 ├── styles.md          # 风格层：客观（默认）/ 严师 / 精简三风格定义
 ├── bridge.md          # 外接网页桥：协议 / 消息信封 / 唤醒应答 / 部署 / 排查
 ├── ROADMAP.md         # 后续设计：v2 对话循环 / v3 教学周期 / v4 多裁判
@@ -99,14 +108,10 @@ SSE 回推网页。接入契约（消息信封 / 唤醒应答 / 页面部署 / �
 │   ├── round-6-free-provider-workspace.md  # free + 验证环 + 范例生成端到端实测
 │   └── round-7-output-format.md            # 三区结构化输出格式测试（结论突出/存档折叠）
 ├── workspace/         # 封闭工作空间（验证实证产物与证据，可弃置重建）
-├── skills/            # 被调用技能（vendored；来源与更新方式见 VENDORED.md）
-│   ├── agent-buddy/   #   备用 Provider v1.0.5
-│   ├── prompt-expert/
-│   ├── prompt-engineering-studio/   # 范例生成器（见 generators.md）
-│   ├── prompt-engineering-expert/
-│   └── VENDORED.md
+├── docs/              # 调研等附属文档
+│   └── AI沟通教练-同类工具调研对比.md
 ├── README.md
-└── AI沟通教练-同类工具调研对比.md   # 立项调研：为何无直接竞品
+└── LICENSE
 ```
 
 ## 使用方式

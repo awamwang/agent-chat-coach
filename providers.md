@@ -49,11 +49,11 @@ constraint_conflict / missing / key_issues）必填，口径与 null 语义见
 
 | Provider | 版本 | 状态 | 评价能力 | 契约覆盖 | 适配要点 |
 |---|---|---|---|---|---|
-| free | 1.0.0 | **默认（已接入）** | agent 场景五维 + 双红线 + agent_fit 加成评估 | 全字段 + 扩展（agent_fit / workspace_verifiable / suggested_verification） | 第一方，指令在 `providers/free/SKILL.md` |
-| agent-buddy | v1.0.5 | **已接入（备用）** | RCTFC 五维诊断 + 第 0 步歧义/矛盾检查 | 全字段 | 文本级粗档评判；free 不可用时回退 |
-| prompt-expert | v1.0.0 | **可接入（未接）** | B 诊断模式：八维百分制 + 带条款号的扣分项 | dimensions / total / missing / key_issues；**红线 null** | 锁 B 诊断禁铸造；档位→0-2 换算表；红线 null |
-| prompt-engineering-expert | v1.0.1 | **可接入（未接）** | Criteria ledger + 歧义/冲突枚举（Ambiguity & authorization） | constraint_conflict / missing / key_issues；**维度 null** | 锁 gate 第 1-2 步禁改写；underspecified→R1 判读规则 |
-| prompt-engineering-studio | v1.0.0 | **不作为 Provider · 转任范例生成器** | 仅生成（变体铸造），无评价路径 | — | 判定逻辑不成立（自证悖论）；生成能力转任「优秀学生案例」，见 `generators.md` |
+| free | 1.0.0 | **默认（已接入）** | agent 场景五维 + 双红线 + agent_fit 加成评估 | 全字段 + 扩展（agent_fit / workspace_verifiable / suggested_verification） | 第一方，`providers/free/` |
+| agent-buddy | v1.0.5 | **已接入（备用）** | RCTFC 五维诊断 + 第 0 步歧义/矛盾检查 | 全字段 | 文本级粗档；`providers/agent-buddy/`；free 不可用时回退 |
+| prompt-expert | v1.0.0 | **可接入（未接）** | B 诊断模式：八维百分制 + 带条款号的扣分项 | dimensions / total / missing / key_issues；**红线 null** | `providers/prompt-expert/`；锁 B 诊断禁铸造；档位→0-2 换算表；红线 null |
+| prompt-engineering-expert | v1.0.1 | **可接入（未接）** | Criteria ledger + 歧义/冲突枚举（Ambiguity & authorization） | constraint_conflict / missing / key_issues；**维度 null** | `providers/prompt-engineering-expert/`；锁 gate 第 1-2 步禁改写；underspecified→R1 |
+| prompt-engineering-studio | v1.0.0 | **不作为 Provider · 转任范例生成器** | 仅生成（变体铸造），无评价路径 | — | 落点 `generators/prompt-engineering-studio/`；见 `generators.md` |
 
 「可接入」= 有能力、契约能映射，但适配规则未写、回归未跑——**写完适配规则 +
 examples/ 回归样例后才升级为「已接入」并允许调度**。「不接入」= 能力定位冲突，
@@ -163,7 +163,7 @@ examples/ 回归样例后才升级为「已接入」并允许调度**。「不�
 
 **新增接入**（「可接入」→「已接入」）：
 
-1. vendored 技能已就位于 `skills/<name>/`（来源登记见 `skills/VENDORED.md`）；
+1. vendored 技能已就位于 `providers/<name>/`（来源登记见 `providers/VENDORED.md`）；
 2. 按「适配评估」节的草案定稿显式适配规则：原生输出 → JSON 摘要的字段映射，
    逐条写明，禁止隐式转换；
 3. 本文件清单中该 Provider 状态改为「已接入」，适配规则位置写入清单行；

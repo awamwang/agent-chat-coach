@@ -85,7 +85,7 @@ description: >
 **Provider = 后端对提示词具体评价的工具技能**（定义、清单、契约见
 `providers.md`）。默认 Provider 为 **free**，指令文件
 `<skill-root>/providers/free/SKILL.md`；备用 agent-buddy
-（`<skill-root>/skills/agent-buddy/`）。本技能的「大模型」就是**当前执行本技能
+（`<skill-root>/providers/agent-buddy/`）。本技能的「大模型」就是**当前执行本技能
 的 Agent 本身**，不调用第三方 API、不需要密钥：
 
 1. 读取当前 Provider 的指令文件，以之为行为指令处理第 1 步的用户输入；

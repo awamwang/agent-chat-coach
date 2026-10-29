@@ -15,7 +15,9 @@
 ## 为何是 prompt-engineering-studio
 
 它**不作为 Provider**（理由记录在 `providers.md`：纯生成器、无评价路径、
-自证悖论），但它的生成能力正是范例环节所需，且已 vendored 验证过：
+自证悖论），落点在 `generators/prompt-engineering-studio/`（与
+`providers/` 并列，不进 Provider 目录）。生成能力正是范例环节所需，且已
+vendored 验证过：
 
 - **intake 简报** → 可由判定结果直接组装（缺什么补什么的料都在）；
 - **`scripts/generate_prompts.py`** → 纯标准库，一次产出主 prompt +
@@ -43,7 +45,7 @@ python generate_prompts.py --brief brief.json --lang zh-CN --count 5 --out resul
 **调用**：
 
 ```
-python <skill-root>/skills/prompt-engineering-studio/scripts/generate_prompts.py \
+python <skill-root>/generators/prompt-engineering-studio/scripts/generate_prompts.py \
   --brief <brief.json> --lang zh-CN --count 5 \
   --out <skill-root>/workspace/<session-id>/evidence/example.md
 ```

@@ -116,7 +116,7 @@
 按 `generators.md` 组装 brief（料全部来自判定结果 + 工作空间事实），调用：
 
 ```
-python skills/prompt-engineering-studio/scripts/generate_prompts.py \
+python generators/prompt-engineering-studio/scripts/generate_prompts.py \
   --brief evidence/brief.json --lang zh-CN --count 3 --out evidence/example.md
 ```
 
