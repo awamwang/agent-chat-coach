@@ -168,30 +168,40 @@ description: >
    它会同步页面 → 8913 没起就拉起 → 报服务 / 页面 / MCP 注册 / 信任 / 在线宿主。
    只想看状态用 `--check`，只同步页面用 `--sync`。
 
-2. **挂桥**（二选一）：
+2. **挂桥并起判定调度**（三级链，择一）：
 
-   - **本会话有 `render_bridge_view` 工具** → 直接调用，右侧面板出现一行「常驻桥」。
-   - **没有这个工具**（连接器没进本会话快照，很常见）→ 走**无面板宿主**，不必等重启：
-
-     ```bash
-     # A 心跳：让宿主在网页上一直显示在线（后台常驻，不退）
-     node "<skill-root>\scripts\host.mjs" --heartbeat --id coach-local --label "教练 · 本机"
-     # B 订阅：长挂等新问题；收到就打印问题并退出（退出事件用来唤醒 Agent）
-     node "<skill-root>\scripts\host.mjs" --id coach-local --label "教练 · 本机"
-     ```
-
-     > **更省事（推荐）**：用 `scripts/serve.mjs` 一条命令取代 A+B——心跳+接单一体、
-     > LLM-free（不受子代理配额影响）、自终止窗口（不必再猜外层 shell timeout）：
-     > `node "<skill-root>\scripts\serve.mjs" --id <x> --window-ms 600000 --mode wake`。
-     > 详见 `docs/子会话宿主模式.md`。
-
-     被唤醒后按下面的流程判完，用 CLI 提交回答并**重新挂 B**（用 serve.mjs 则重新起 serve）：
+   - **本会话有 `render_bridge_view` 工具** → 直接调用，右侧面板出现一行「常驻桥」
+     （随手判场景，判定内容会留在本会话上下文里）。
+   - **要隔离就无面板、走 LLM-free 消费者**（推荐）：
 
      ```bash
-     node "<skill-root>\scripts\reply.mjs" --inbox-latest --file <回答.md>
+     # L1：一条命令跑完「接单 → 建任务包 → 起短命判定会话 → 校验 → 回推」
+     node "<skill-root>\scripts\serve.mjs" --id coach-sub --label "教练 · 子会话" \
+       --window-ms 600000 --mode wake \
+       --spawn-cmd "claude -p --permission-mode acceptEdits < \"{promptFile}\""
      ```
 
-     两条进程同一 `--id`：A 保在线，B 收问题。A 断了网页会报「链路不通」。
+     > prompt 必须用 **`<` 重定向**送进 agent。`$(cat {promptFile})` 在 Windows 的
+     > cmd.exe 下不展开（会被当字面参数，实测失败）；若你的 CLI 不吃 stdin，就让 agent
+     > 自己按 promptFile 路径 Read（模板里本就要它读 bodyFile）。
+
+     不配 `--spawn-cmd` 即退成 **L2 主会话接管**：接单后以退出码 0 结束，打印任务包
+     （`TASK_READY` + `taskFile` / `promptFile` / `answerFile`）。把 `promptFile` **原样**
+     丢给一个**短命**判定子会话（判完即退），或自己判——不要让子会话驻留等单。
+
+     **降级信号**：退出码 **4**（`SPAWN_FAILED` / `DEGRADE`）= L1 挂了。主会话按
+     `DEGRADE id` 取那单，读 `promptFile` 接管判定，回推时**显式带 `--id`**
+     （桥不重放已读 backlog，别用 `--inbox-latest`，免得取到新单）。
+
+     写稿后自检 + 回推（闸门会拦空稿 / 占位符残留 / `<details>` 未闭合）：
+
+     ```bash
+     node "<skill-root>\scripts\answer-check.mjs" --file <回答.md> --style <objective|strict|brief>
+     node "<skill-root>\scripts\reply.mjs" --id <id> --file <回答.md>
+     ```
+
+     兜底：旧的双进程写法仍可用（`host.mjs --heartbeat` 保在线 + `host.mjs` 等单），
+     但要自己维系两个进程。完整取舍、退出码表与排错见 `docs/子会话宿主模式.md`。
 
 3. **给链接 / 开窗口**——两种开法，先问用户要哪个：
    - **浏览器地址**：`http://localhost:8913/web/coach.html`（同机任意浏览器）
