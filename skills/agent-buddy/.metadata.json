@@ -1,0 +1,8 @@
+{
+  "assetType": "skill",
+  "name": "agent-buddy",
+  "displayName": "Agent Buddy - Prompt Coach",
+  "semver": "1.0.5",
+  "category": "productivity",
+  "tags": ["prompt", "coach", "rctfc", "ai", "writing", "skill"]
+}
