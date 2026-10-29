@@ -49,7 +49,7 @@ description: >
 |---|---|---|
 | 1 | **环境体检（`init`）** | `node "<skill-root>\scripts\bridge.mjs" --init` —— 只读检查宿主桥通信的支持环境；报致命项就停在这里，说清缺什么 |
 | 2 | **同步页面 + 起服务** | `node "<skill-root>\scripts\bridge.mjs"` —— 幂等：页面同步 → 8913 没起就拉起 → 报状态 |
-| 3 | **挂宿主** | 有 `render_bridge_view` → 面板挂桥；没有 → 无面板宿主（`host.mjs` 心跳 + 订阅） |
+| 3 | **挂宿主** | 有 `render_bridge_view` → 面板挂桥；没有 → 无面板宿主（`serve.mjs` 一条命令：心跳 + 接单；默认 L2 主会话判定） |
 | 4 | **问入口** | 二选一（见下），用户点头后再打开；不替用户决定 |
 
 第 4 步必须**问**，不能直接开——开窗口会抢焦点。问法：
@@ -168,37 +168,57 @@ description: >
    它会同步页面 → 8913 没起就拉起 → 报服务 / 页面 / MCP 注册 / 信任 / 在线宿主。
    只想看状态用 `--check`，只同步页面用 `--sync`。
 
-2. **挂桥并起判定调度**（三级链，择一）：
+2. **挂桥并起判定调度**（默认 **L2：主会话判定**）：
 
    - **本会话有 `render_bridge_view` 工具** → 直接调用，右侧面板出现一行「常驻桥」
      （随手判场景，判定内容会留在本会话上下文里）。
-   - **要隔离就无面板、走 LLM-free 消费者**（推荐）：
+   - **要隔离就无面板、走 LLM-free 消费者**（默认路径）：
 
      ```bash
-     # L1：一条命令跑完「接单 → 建任务包 → 起短命判定会话 → 校验 → 回推」
+     # L2（默认）：接单 → 建任务包 → 退出码 0 唤醒主会话判定
      node "<skill-root>\scripts\serve.mjs" --id coach-sub --label "教练 · 子会话" \
-       --window-ms 600000 --mode wake \
-       --spawn-cmd "claude -p --permission-mode acceptEdits < \"{promptFile}\""
+       --window-ms 600000 --mode wake
      ```
 
-     > prompt 必须用 **`<` 重定向**送进 agent。`$(cat {promptFile})` 在 Windows 的
-     > cmd.exe 下不展开（会被当字面参数，实测失败）；若你的 CLI 不吃 stdin，就让 agent
-     > 自己按 promptFile 路径 Read（模板里本就要它读 bodyFile）。
+     `serve.mjs` 自带心跳（宿主全程 online）+ 长轮询接单 + 信封解析 + 任务包物化，
+     全程不吃 LLM 配额；`--window-ms` 到点自退（码 3），**不要再套外层 shell timeout**。
 
-     不配 `--spawn-cmd` 即退成 **L2 主会话接管**：接单后以退出码 0 结束，打印任务包
-     （`TASK_READY` + `taskFile` / `promptFile` / `answerFile`）。把 `promptFile` **原样**
-     丢给一个**短命**判定子会话（判完即退），或自己判——不要让子会话驻留等单。
-
-     **降级信号**：退出码 **4**（`SPAWN_FAILED` / `DEGRADE`）= L1 挂了。主会话按
-     `DEGRADE id` 取那单，读 `promptFile` 接管判定，回推时**显式带 `--id`**
-     （桥不重放已读 backlog，别用 `--inbox-latest`，免得取到新单）。
-
-     写稿后自检 + 回推（闸门会拦空稿 / 占位符残留 / `<details>` 未闭合）：
+     接单后它打印 `TASK_READY` 与五步指引（读口径 / 读正文 / 写稿 / 自检 / 回推），
+     主会话照做：
 
      ```bash
      node "<skill-root>\scripts\answer-check.mjs" --file <回答.md> --style <objective|strict|brief>
      node "<skill-root>\scripts\reply.mjs" --id <id> --file <回答.md>
      ```
+
+     闸门会拦空稿 / 占位符残留 / `<details>` 未闭合。回推成功即在账本记 `REPLIED`。
+
+     **断点恢复（L2 最常踩的坑）**：被唤醒后丢了 id、或不确定推没推，一律先查账本：
+
+     ```bash
+     node "<skill-root>\scripts\pending.mjs"        # 列「已接单未回推」，附可直接复制的自检/回推命令
+     ```
+
+     退出码 5 = 有待回推；`--json` 机读；确实放弃某单用 `--drop <id>`。
+     **别用 `--inbox-latest` 在多单场景下取 id**——inbox 是流水，来新单就取错。
+
+     **连续多单**：`--mode loop` 常驻接单（每单落账本、不退出），用 `pending.mjs` 巡检；
+     `--mode wake` 接一单即退，适合你判一单发一单。
+
+     **L1 自动判定（备用，未在本机实跑验证）**：把判定交给外部 CLI agent，需自备它的
+     配额（与 WorkBuddy 是两套）：
+
+     ```bash
+     node "<skill-root>\scripts\serve.mjs" --id coach-sub --window-ms 600000 --mode wake \
+       --spawn-cmd "claude -p --permission-mode acceptEdits < \"{promptFile}\""
+     ```
+
+     > prompt 必须用 **`<` 重定向**送进 agent。`$(cat {promptFile})` 在 Windows 的
+     > cmd.exe 下不展开（实测变成字面参数）；若 CLI 不吃 stdin，让 agent 按 promptFile
+     > 路径自己 Read（模板里本就要它读 bodyFile）。
+
+     **降级信号**：退出码 **4**（`SPAWN_FAILED` / `DEGRADE`）= L1 挂了，主会话按
+     `DEGRADE id` 接管那单，回推**显式带 `--id`**。
 
      兜底：旧的双进程写法仍可用（`host.mjs --heartbeat` 保在线 + `host.mjs` 等单），
      但要自己维系两个进程。完整取舍、退出码表与排错见 `docs/子会话宿主模式.md`。

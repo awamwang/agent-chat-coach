@@ -13,11 +13,15 @@
  * <details> 未闭合会被拒绝，避免把坏稿推到网页。-e 或 --force 可强制推送。
  *
  * 幂等：同一条重复提交返回 duplicate=true，不会把回答推两遍。
+ * 记账：推送成功（含 duplicate）会在 workspace/_bridge/ledger.jsonl 写 REPLIED，
+ *       scripts/pending.mjs 据此销账——L2 忘了 id 时靠它找回待回推的单。
+ *       多单场景一律用显式 --id；--inbox-latest 只适合"刚接完一单立刻回"。
  * 零第三方依赖，Node >= 18。
  */
 
 import { existsSync, readFileSync } from "node:fs";
 import { checkAnswer } from "./lib/answer-quality.mjs";
+import { appendEvent } from "./lib/ledger.mjs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -106,4 +110,16 @@ if (sc.duplicate) {
   console.log(`已忽略重复提交：id=${sc.id}（此前答过，未重复推送）`);
 } else {
   console.log(`已推送到网页：id=${sc.id} · 宿主 ${sc.hostLabel} 的第 ${sc.count} 条回答`);
+}
+
+/* 记账：REPLIED 是"待回推清单"（scripts/pending.mjs）唯一的销账依据 */
+const ledgerId = sc.id || id;
+if (ledgerId) {
+  appendEvent(argOf("--out-dir") || join(SKILL_DIR, "workspace", "_bridge"), {
+    type: "REPLIED",
+    id: ledgerId,
+    duplicate: Boolean(sc.duplicate),
+    chars: qc.chars,
+    style,
+  });
 }

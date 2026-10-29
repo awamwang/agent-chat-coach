@@ -43,6 +43,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { buildTask, renderPrompt } from "./lib/envelope.mjs";
 import { checkAnswer } from "./lib/answer-quality.mjs";
+import { appendEvent } from "./lib/ledger.mjs";
 
 const SKILL_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 const BASE = process.env.BRIDGE_BASE || "http://127.0.0.1:8913";
@@ -179,6 +180,17 @@ function handleQuestion(q, sc) {
 
   printQuestion(q, sc);
 
+  if (task) {
+    appendEvent(outDir, {
+      type: "RECEIVED",
+      id: task.id,
+      hostId,
+      style: task.style,
+      example: task.example,
+      bodyChars: task.bodyChars,
+    });
+  }
+
   if (!task) {
     console.log(`\n回答：node scripts\\reply.mjs --id ${q.id} --file <回答文件>   （或 --inbox-latest）`);
     return { code: 0 };
@@ -192,9 +204,15 @@ function handleQuestion(q, sc) {
 
   // 3) 无 spawn：交给主会话（L2），本脚本正常退出
   if (!spawnCmd) {
-    console.log("  未配 --spawn-cmd → 交主会话接管：读 promptFile 下发给判定子会话，或直接判定后:");
-    console.log(`  ${task.replyCmd}`);
-    return { code: 0 };
+    console.log("\n--- L2 主会话判定（默认路径）---");
+    console.log(`① 读口径：${task.skillDir}/SKILL.md · providers/free/SKILL.md · rules.md · styles.md` +
+      (task.example ? " · generators.md（范例=要）" : ""));
+    console.log(`② 读正文：${task.bodyFile}（${task.bodyChars} 字，风格 ${task.style}）`);
+    console.log(`③ 写稿到：${task.answerFile}`);
+    console.log(`④ 自检  ：${task.checkCmd}`);
+    console.log(`⑤ 回推  ：${task.replyCmd}`);
+    console.log(`（另有单挂着 / 忘了 id → node "${join(SKILL_DIR, "scripts", "pending.mjs").replace(/\\/g, "/")}"）`);
+    return { code: 0, task };
   }
 
   // 4) L1：自启外部判定 agent
@@ -273,6 +291,7 @@ async function waitLoop() {
       const res = handleQuestion(q, sc);
 
       if (res.code === 4) {
+        appendEvent(outDir, { type: "DEGRADE", id: q.id, reason: res.reason });
         console.log(`DEGRADE id=${q.id} reason=${res.reason}`);
         console.log("（退出码 4：唤醒主会话接手判定，勿重复提交）");
         process.exit(4);
