@@ -11,9 +11,15 @@
  *   --wait        长挂订阅；收到问题就打印 + 落 inbox 后**退出**（退出事件用来唤醒
  *                 Agent：后台任务结束会通知它），超时则静默续订
  *
+ * 订阅模式的两个开关（解决「外层 shell timeout 必须猜 > waitMs+20000」的坑）：
+ *   --total-ms N  总窗口：到点仍未接到问题就自己退出（退出码 3），不再依赖外层超时
+ *   --loop        接到一单后不退出，继续订阅下一单（连挂多单/批量；配 --total-ms 收尾）
+ *
  * 用法：
  *   node scripts\host.mjs --heartbeat --id coach-local --label "教练 · 本机"
  *   node scripts\host.mjs --wait      --id coach-local --label "教练 · 本机"
+ *   node scripts\host.mjs --wait --id coach-local --total-ms 600000          # 自终止窗口
+ *   node scripts\host.mjs --wait --id coach-local --loop --total-ms 1800000   # 连挂多单
  *
  * 回答用 scripts\reply.mjs。零第三方依赖，Node >= 18。
  */
@@ -36,6 +42,9 @@ const waitMs = Math.min(Number(argOf("--wait-ms", "50000")) || 50000, 60000);
 const heartbeatOnly = process.argv.includes("--heartbeat");
 const verbose = process.argv.includes("--verbose");
 const inboxPath = argOf("--inbox", join(SKILL_DIR, "workspace", "_bridge", "inbox.jsonl"));
+const totalMs = Math.max(0, Number(argOf("--total-ms", "0")) || 0);   // 0 = 不限时（老行为）
+const loopMode = process.argv.includes("--loop");                     // 接到一单后继续订阅
+const startedAt = Date.now();
 
 let seq = 0;
 
@@ -88,15 +97,27 @@ async function heartbeatLoop() {
   }
 }
 
-/* ---------- 订阅模式：有则退出（用来唤醒 Agent），超时静默续订 ---------- */
+/* ---------- 订阅模式：有则退出（唤醒 Agent）或 loop 连挂；--total-ms 自终止 ---------- */
 async function waitLoop() {
-  console.log(`[host] 订阅模式：hostId=${hostId} label=${label}，waitMs=${waitMs}`);
+  console.log(
+    `[host] 订阅模式：hostId=${hostId} label=${label}，waitMs=${waitMs}，` +
+    `totalMs=${totalMs || "∞"}，mode=${loopMode ? "loop" : "wake"}`
+  );
   let sinceId;
   let rounds = 0;
   while (true) {
+    // 自终止窗口：到点仍未接到就自己退（码 3），调用方无需再猜 shell timeout
+    if (totalMs > 0 && Date.now() - startedAt >= totalMs) {
+      console.log(`[host] 窗口到期（${totalMs} ms），未接到新问题`);
+      process.exit(3);
+    }
+    // 单次长轮询不超过剩余窗口
+    const remain = totalMs > 0 ? Math.max(1000, totalMs - (Date.now() - startedAt)) : Infinity;
+    const callWait = Math.min(waitMs, remain);
+
     let r;
     try {
-      r = await mcpCall("await_question", { hostId, label, sinceId, waitMs }, waitMs + 20000);
+      r = await mcpCall("await_question", { hostId, label, sinceId, waitMs: callWait }, callWait + 20000);
     } catch (e) {
       console.log(`  ! 订阅失败：${e.message}（5 秒后重试）`);
       await sleep(5000);
@@ -119,9 +140,12 @@ async function waitLoop() {
       console.log("---- 消息原文 ----");
       console.log(q.message);
       console.log("---- 原文结束 ----");
-      console.log(`\n回答：node scripts\\reply.mjs --id ${q.id} --file <回答文件>`);
-      console.log("（本进程到此退出，后台任务结束会唤醒 Agent）");
-      process.exit(0);
+      console.log(`\n回答：node scripts\\reply.mjs --id ${q.id} --file <回答文件>   （或 --inbox-latest）`);
+      if (!loopMode) {
+        console.log("（wake 模式：本进程到此退出，后台任务结束会唤醒 Agent）");
+        process.exit(0);
+      }
+      console.log("（loop 模式：继续订阅下一单）");
     }
     rounds++;
     if (verbose && rounds % 5 === 0) {

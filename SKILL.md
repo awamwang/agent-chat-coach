@@ -180,10 +180,15 @@ description: >
      node "<skill-root>\scripts\host.mjs" --id coach-local --label "教练 · 本机"
      ```
 
-     被唤醒后按下面的流程判完，用 CLI 提交回答并**重新挂 B**：
+     > **更省事（推荐）**：用 `scripts/serve.mjs` 一条命令取代 A+B——心跳+接单一体、
+     > LLM-free（不受子代理配额影响）、自终止窗口（不必再猜外层 shell timeout）：
+     > `node "<skill-root>\scripts\serve.mjs" --id <x> --window-ms 600000 --mode wake`。
+     > 详见 `docs/子会话宿主模式.md`。
+
+     被唤醒后按下面的流程判完，用 CLI 提交回答并**重新挂 B**（用 serve.mjs 则重新起 serve）：
 
      ```bash
-     node "<skill-root>\scripts\reply.mjs" --id <问题id> --file <回答.md>
+     node "<skill-root>\scripts\reply.mjs" --inbox-latest --file <回答.md>
      ```
 
      两条进程同一 `--id`：A 保在线，B 收问题。A 断了网页会报「链路不通」。
