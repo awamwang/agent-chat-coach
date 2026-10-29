@@ -1,2 +1,11 @@
 # 封闭工作空间：验证实证产物与证据，可弃置重建，不入库
 workspace/
+
+# 运行期与工具产物
+.tmp/
+*.log
+node_modules/
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db

@@ -1,0 +1,10 @@
+{
+  "_why": "放行清单只放两类：① vendored 第三方技能的原文（VENDORED.md 约定不修改原文，改动会失去与市场版的比对基准）；② 上游文档里用于讲解「路径写法」的示例。本仓自己的文档与脚本已全部改为占位符/相对解析，不在此列。",
+  "allow": [
+    "skills/prompt-expert/README.md:win_home",
+    "skills/prompt-expert/README.md:email",
+    "skills/prompt-engineering-expert/docs/BEST_PRACTICES.md:win_home",
+    "skills/prompt-engineering-expert/docs/BEST_PRACTICES.md:posix_home"
+  ],
+  "max_file_mb": 5
+}
