@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>反向输出师 · 沟通教练</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f7f7f5;
+    --panel-2: #fbfbfa;
+    --line: rgba(0, 0, 0, 0.12);
+    --line-2: rgba(0, 0, 0, 0.07);
+    --text: #2C2C2A;
+    --muted: #5F5E5A;
+    --faint: #8A8984;
+    --accent: #185FA5;
+    --ok: #1D9E75;
+    --warn: #BA7517;
+    --bad: #A32D2D;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.65 system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    display: flex; flex-direction: column;
+  }
+  /* ---------- header ---------- */
+  header {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 10px 18px; border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+  header h1 { font-size: 14px; font-weight: 600; margin: 0 10px 0 0; letter-spacing: .2px; }
+  header h1 .sub { font-weight: 400; color: var(--faint); margin-left: 6px; font-size: 12px; }
+  .badge {
+    font-size: 12px; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+  }
+  .badge.on { color: var(--ok); border-color: rgba(29,158,117,.45); background: rgba(29,158,117,.07); }
+  .badge.warn { color: var(--warn); border-color: rgba(186,117,23,.45); background: rgba(186,117,23,.07); }
+  .badge.bad { color: var(--bad); border-color: rgba(163,45,45,.45); background: rgba(163,45,45,.06); }
+  .spacer { margin-left: auto; }
+  .ghost {
+    font: inherit; font-size: 12px; padding: 3px 10px; cursor: pointer;
+    color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  }
+  .ghost:hover { color: var(--text); border-color: rgba(0,0,0,.28); }
+  .ghost.mini { padding: 1px 8px; font-size: 11px; }
+  #hostSel {
+    font: inherit; font-size: 12px; padding: 3px 8px; color: var(--text);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 999px;
+    cursor: pointer; max-width: 230px; min-width: 96px;
+  }
+  #notice {
+    padding: 8px 18px; font-size: 13px; color: var(--bad); line-height: 1.5;
+    background: rgba(163,45,45,.05); border-bottom: 1px solid var(--line); display: none;
+  }
+  /* ---------- feed ---------- */
+  #log { flex: 1; overflow-y: auto; padding: 18px; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  .empty { color: var(--muted); font-size: 13px; padding: 26px 4px; }
+  .empty h2 { font-size: 15px; color: var(--text); margin: 0 0 8px; font-weight: 600; }
+  .empty ol { margin: 8px 0 0; padding-left: 20px; }
+  .empty li { margin: 4px 0; }
+  .empty .no { margin-top: 14px; padding: 10px 12px; background: var(--panel); border-radius: 10px; font-size: 12.5px; }
+
+  .card {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px 16px 16px; margin-bottom: 14px;
+  }
+  .card.failed { border-color: rgba(163,45,45,.4); background: rgba(163,45,45,.02); }
+  .card-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pill {
+    font-size: 11.5px; padding: 1px 8px; border-radius: 999px;
+    background: var(--panel); color: var(--muted); white-space: nowrap;
+  }
+  .pill.style { color: var(--accent); background: rgba(24,95,165,.08); }
+  .pill.st-bad { color: var(--bad); background: rgba(163,45,45,.07); }
+  .pill.st-warn { color: var(--warn); background: rgba(186,117,23,.08); }
+  .src { border: 1px solid var(--line-2); border-radius: 10px; padding: 6px 10px; margin-bottom: 12px; background: var(--panel-2); }
+  .src > summary { font-size: 12px; color: var(--muted); cursor: pointer; list-style: none; }
+  .src > summary::-webkit-details-marker { display: none; }
+  .src > summary::before { content: "▸ "; }
+  .src[open] > summary::before { content: "▾ "; }
+  .src pre {
+    margin: 8px 0 2px; white-space: pre-wrap; word-break: break-word;
+    font: 12.5px/1.6 ui-monospace, Consolas, "Microsoft YaHei", monospace;
+    color: var(--muted); max-height: 260px; overflow: auto;
+  }
+  .state { color: var(--muted); font-size: 13px; }
+  .state .dots::after { content: "…"; animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:.25} 50%{opacity:1} }
+
+  /* ---------- markdown ---------- */
+  .md { font-size: 14px; }
+  .md > :first-child { margin-top: 0; }
+  .md h2 {
+    font-size: 16px; font-weight: 600; margin: 6px 0 10px;
+    padding-left: 10px; border-left: 3px solid var(--accent); line-height: 1.45;
+  }
+  .md h3 { font-size: 14.5px; font-weight: 600; margin: 16px 0 6px; }
+  .md h4, .md h5, .md h6 { font-size: 13.5px; font-weight: 600; margin: 12px 0 4px; color: var(--muted); }
+  .md p { margin: 7px 0; }
+  .md ul, .md ol { margin: 7px 0; padding-left: 22px; }
+  .md li { margin: 3px 0; }
+  .md blockquote {
+    margin: 10px 0; padding: 9px 14px; border-left: 3px solid rgba(24,95,165,.35);
+    background: rgba(24,95,165,.04); border-radius: 0 10px 10px 0; color: var(--text);
+  }
+  .md blockquote p { margin: 3px 0; }
+  .md code {
+    font: 12.5px/1.5 ui-monospace, Consolas, monospace;
+    background: var(--panel); padding: 1px 5px; border-radius: 5px;
+  }
+  .md pre { background: var(--panel); border-radius: 10px; padding: 10px 12px; overflow: auto; margin: 10px 0; }
+  .md pre code { background: none; padding: 0; }
+  .md hr { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
+  .md table { border-collapse: collapse; margin: 10px 0; font-size: 13px; width: 100%; }
+  .md th, .md td { border: 1px solid var(--line); padding: 5px 9px; text-align: left; vertical-align: top; }
+  .md th { background: var(--panel); font-weight: 600; }
+  .md details {
+    border: 1px solid var(--line-2); border-radius: 10px; padding: 6px 12px;
+    margin: 10px 0; background: var(--panel-2);
+  }
+  .md details > summary { font-size: 12.5px; color: var(--muted); cursor: pointer; }
+  .md details[open] > summary { margin-bottom: 6px; }
+
+  /* ---------- composer ---------- */
+  form { border-top: 1px solid var(--line); background: var(--panel-2); padding: 10px 18px 14px; }
+  .composer { max-width: 880px; margin: 0 auto; }
+  .opts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .chips { display: flex; gap: 4px; }
+  .chip {
+    font: inherit; font-size: 12px; padding: 3px 12px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--muted);
+  }
+  .chip:hover { color: var(--text); }
+  .chip.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .check { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .hint { font-size: 11.5px; color: var(--faint); margin-left: auto; }
+  .row { display: flex; gap: 10px; align-items: flex-end; }
+  textarea {
+    flex: 1; padding: 10px 12px; font: inherit; color: var(--text); resize: none;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
+    outline: none; min-height: 74px; max-height: 260px; line-height: 1.6;
+  }
+  textarea:focus { border-color: rgba(24,95,165,.5); }
+  button.primary {
+    padding: 10px 20px; font: inherit; font-weight: 500; color: #fff; background: var(--accent);
+    border: none; border-radius: 12px; cursor: pointer; height: 42px; flex: 0 0 auto;
+  }
+  button.primary:disabled { opacity: .45; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<header>
+  <h1>反向输出师<span class="sub">沟通有效性教练</span></h1>
+  <select id="hostSel" title="消息发给哪个宿主（每个宿主 = 一个开了常驻桥的会话）"></select>
+  <span class="badge" id="conn">连接中…</span>
+  <span class="badge" id="queue">队列 0</span>
+  <span class="spacer"></span>
+  <button class="ghost" id="sync" title="重新拉取服务端状态">刷新状态</button>
+  <button class="ghost" id="clear" title="清空本浏览器里的判定记录">清空记录</button>
+</header>
+<div id="notice"></div>
+<div id="log"><div class="wrap" id="feed"></div></div>
+
+<form id="form">
+  <div class="composer">
+    <div class="opts">
+      <div class="chips" id="styleChips">
+        <button type="button" class="chip on" data-style="objective">客观</button>
+        <button type="button" class="chip" data-style="strict">严师</button>
+        <button type="button" class="chip" data-style="brief">精简</button>
+      </div>
+      <label class="check"><input type="checkbox" id="wantExample" /> 附优秀学生案例</label>
+      <span class="hint">Ctrl + Enter 提交</span>
+    </div>
+    <div class="row">
+      <textarea id="input" rows="3" placeholder="把你要发给 AI 的提示词，或一段真实聊天记录，原样粘贴进来…"></textarea>
+      <button class="primary" type="submit" id="send">判定</button>
+    </div>
+  </div>
+</form>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORE_KEY = "acc-records-v1";
+  var HOST_KEY = "acc-host-v1";
+  var REC_CAP = 60;
+  var WAIT_TIMEOUT_MS = 180000;  // 判定可能带工作空间验证，给 3 分钟
+  var HOST_ALIVE_MS = 30000;
+
+  var STYLES = { objective: "客观", strict: "严师", brief: "精简" };
+
+  var feedEl = document.getElementById("feed");
+  var formEl = document.getElementById("form");
+  var inputEl = document.getElementById("input");
+  var sendBtn = document.getElementById("send");
+  var connEl = document.getElementById("conn");
+  var queueEl = document.getElementById("queue");
+  var noticeEl = document.getElementById("notice");
+  var hostSel = document.getElementById("hostSel");
+  var chipsEl = document.getElementById("styleChips");
+  var exampleEl = document.getElementById("wantExample");
+
+  var records = [];
+  var style = "objective";
+  var userHostId = "";
+  var lastSnapshot = null;
+  var hostSig = "\u0000";   // 非空：保证首次快照一定会重建下拉
+  var timers = {};
+
+  /* ---------------- 小工具 ---------------- */
+  function notice(text) {
+    if (!text) { noticeEl.style.display = "none"; noticeEl.textContent = ""; return; }
+    noticeEl.style.display = "block";
+    noticeEl.textContent = text;
+  }
+  function setBadge(el, text, cls) { el.textContent = text; el.className = "badge" + (cls ? " " + cls : ""); }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function hhmm(ts) {
+    var d = new Date(ts), h = d.getHours(), m = d.getMinutes();
+    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+  }
+
+  /* ---------------- 极简 markdown ----------------
+     只覆盖本技能报告用到的语法：标题 / 列表 / 引用 / 代码 / 表格 / details 折叠。
+     details 白名单原样透出（结论区靠它折叠），其余 HTML 一律转义。 */
+  function inline(s) {
+    s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    return s;
+  }
+  function splitRow(ln) {
+    return ln.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(function (c) { return c.trim(); });
+  }
+  function md(text) {
+    var tokens = [];
+    var s = String(text == null ? "" : text).replace(
+      /<details[^>]*>|<\/details>|<summary>[\s\S]*?<\/summary>/g,
+      function (m) { tokens.push(m); return "\u0000" + (tokens.length - 1) + "\u0000"; }
+    );
+    s = esc(s);
+    var lines = s.split(/\r?\n/);
+    var out = [], listType = null, i = 0;
+
+    function flush() { if (listType) { out.push("</" + listType + ">"); listType = null; } }
+
+    for (i = 0; i < lines.length; i++) {
+      var ln = lines[i];
+
+      var tok = ln.match(/^(?:\u0000\d+\u0000)+$/);
+      if (tok) {
+        flush();
+        out.push(ln.replace(/\u0000(\d+)\u0000/g, function (_m, idx) { return tokens[+idx]; }));
+        continue;
+      }
+      if (/^\s*$/.test(ln)) { flush(); continue; }
+
+      if (/^```/.test(ln)) {
+        flush();
+        var code = [];
+        i++;
+        while (i < lines.length && !/^```/.test(lines[i])) { code.push(lines[i]); i++; }
+        out.push("<pre><code>" + code.join("\n") + "</code></pre>");
+        continue;
+      }
+
+      var h = ln.match(/^(#{1,4})\s+(.*)$/);
+      if (h) {
+        flush();
+        var lv = Math.max(h[1].length, 2);   // ## 就是一级结论标题，不下移
+        out.push("<h" + Math.min(lv, 6) + ">" + inline(h[2]) + "</h" + Math.min(lv, 6) + ">");
+        continue;
+      }
+
+      if (/^\s*(-{3,}|_{3,}|\*{3,})\s*$/.test(ln)) { flush(); out.push("<hr>"); continue; }
+
+      if (/^\|.*\|\s*$/.test(ln) && /^\|[\s:|-]+\|\s*$/.test(lines[i + 1] || "")) {
+        flush();
+        var head = splitRow(ln), body = [];
+        i++;
+        while (i + 1 < lines.length && /^\|.*\|\s*$/.test(lines[i + 1])) { i++; body.push(splitRow(lines[i])); }
+        var t = "<table><thead><tr>" + head.map(function (c) { return "<th>" + inline(c) + "</th>"; }).join("") + "</tr></thead><tbody>";
+        body.forEach(function (r) {
+          t += "<tr>" + r.map(function (c) { return "<td>" + inline(c) + "</td>"; }).join("") + "</tr>";
+        });
+        out.push(t + "</tbody></table>");
+        continue;
+      }
+
+      var q = ln.match(/^&gt;\s?(.*)$/);
+      if (q) {
+        flush();
+        var quote = [q[1]];
+        while (i + 1 < lines.length && /^&gt;\s?/.test(lines[i + 1])) {
+          i++;
+          quote.push(lines[i].replace(/^&gt;\s?/, ""));
+        }
+        out.push("<blockquote>" + quote.map(inline).join("<br>") + "</blockquote>");
+        continue;
+      }
+
+      var ul = ln.match(/^\s*[-*+]\s+(.*)$/);
+      if (ul) {
+        if (listType !== "ul") { flush(); out.push("<ul>"); listType = "ul"; }
+        out.push("<li>" + inline(ul[1]) + "</li>");
+        continue;
+      }
+
+      var ol = ln.match(/^\s*\d+[.)]\s+(.*)$/);
+      if (ol) {
+        if (listType !== "ol") { flush(); out.push("<ol>"); listType = "ol"; }
+        out.push("<li>" + inline(ol[1]) + "</li>");
+        continue;
+      }
+
+      flush();
+      out.push("<p>" + inline(ln) + "</p>");
+    }
+    flush();
+    return out.join("\n");
+  }
+
+  /* ---------------- 持久化 ---------------- */
+  function save() {
+    try {
+      var slim = records.slice(0, REC_CAP);
+      window.localStorage.setItem(STORE_KEY, JSON.stringify(slim));
+    } catch (e) { /* 隐私模式：不持久化也能用 */ }
+  }
+  function load() {
+    try {
+      var arr = JSON.parse(window.localStorage.getItem(STORE_KEY) || "[]");
+      if (!Array.isArray(arr)) return;
+      records = arr.filter(function (r) { return r && typeof r.input === "string"; }).map(function (r) {
+        return {
+          id: String(r.id || ""),
+          ts: Number(r.ts) || Date.now(),
+          input: String(r.input || ""),
+          style: STYLES[r.style] ? r.style : "objective",
+          examples: !!r.examples,
+          answer: String(r.answer || ""),
+          error: String(r.error || ""),
+          status: ["pending", "timeout", "failed", "ok"].indexOf(r.status) >= 0 ? r.status : "ok",
+          hostId: String(r.hostId || ""),
+          hostLabel: String(r.hostLabel || "")
+        };
+      }).slice(0, REC_CAP);
+      // 上次没等到结果的，标记为超时（不丢输入，可重发）
+      records.forEach(function (r) { if (r.status === "pending") r.status = "timeout"; });
+    } catch (e) { /* 从空开始 */ }
+  }
+  function loadHostChoice() {
+    try { userHostId = window.localStorage.getItem(HOST_KEY) || ""; } catch (e) { userHostId = ""; }
+  }
+  function saveHostChoice() {
+    try {
+      if (userHostId) window.localStorage.setItem(HOST_KEY, userHostId);
+      else window.localStorage.removeItem(HOST_KEY);
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ---------------- 宿主 ---------------- */
+  function hostById(id) {
+    var hosts = (lastSnapshot && lastSnapshot.hosts) || [];
+    for (var k = 0; k < hosts.length; k++) if (hosts[k].id === id) return hosts[k];
+    return null;
+  }
+  function isAlive(h) { return !!h && h.online === true && typeof h.aliveMs === "number" && h.aliveMs < HOST_ALIVE_MS; }
+  function aliveHosts() {
+    return ((lastSnapshot && lastSnapshot.hosts) || []).filter(isAlive)
+      .sort(function (a, b) { return (a.aliveMs || 0) - (b.aliveMs || 0); });
+  }
+  function currentTarget() {
+    var chosen = userHostId ? hostById(userHostId) : null;
+    if (isAlive(chosen)) return { host: chosen, auto: false };
+    var alive = aliveHosts();
+    if (alive.length) return { host: alive[0], auto: true };
+    return { host: null, auto: true };
+  }
+
+  function rebuildHostSelect() {
+    var hosts = (lastSnapshot && lastSnapshot.hosts) || [];
+    var sig = hosts.map(function (h) { return h.id + ":" + (isAlive(h) ? 1 : 0) + ":" + (h.pendingCount || 0); }).join("|");
+    if (sig === hostSig) return;
+    hostSig = sig;
+
+    var alive = aliveHosts();
+    var offline = hosts.filter(function (h) { return !isAlive(h); });
+    var target = currentTarget();
+
+    hostSel.innerHTML = "";
+    if (!alive.length) {
+      var o = document.createElement("option");
+      o.value = "";
+      o.textContent = offline.length ? "无可用宿主（" + offline.length + " 个离线）" : "无可用宿主";
+      hostSel.appendChild(o);
+      return;
+    }
+    alive.forEach(function (h) {
+      var opt = document.createElement("option");
+      opt.value = h.id;
+      opt.textContent = h.label + "（在线" + (h.pendingCount ? " · 待判 " + h.pendingCount : "") +
+        (h.answeredCount ? " · 已判 " + h.answeredCount : "") + "）";
+      hostSel.appendChild(opt);
+    });
+    if (offline.length) {
+      var grp = document.createElement("optgroup");
+      grp.label = "离线宿主";
+      grp.disabled = true;
+      offline.forEach(function (h) {
+        var opt = document.createElement("option");
+        opt.value = h.id;
+        opt.textContent = h.label + "（离线）";
+        opt.disabled = true;
+        grp.appendChild(opt);
+      });
+      hostSel.appendChild(grp);
+    }
+    hostSel.value = target.host ? target.host.id : "";
+    if (target.auto) hostSel.title = "自动选择最近活跃的在线宿主，可手动改选";
+  }
+
+  hostSel.addEventListener("change", function () {
+    userHostId = hostSel.value || "";
+    saveHostChoice();
+    if (userHostId) {
+      var h = hostById(userHostId);
+      if (h && !isAlive(h)) notice("宿主「" + h.label + "」当前离线，暂时发不出去。");
+      else notice("");
+    }
+    render();
+  });
+
+  /* ---------------- 渲染 ---------------- */
+  function render() {
+    feedEl.innerHTML = "";
+    if (!records.length) {
+      var e = document.createElement("div");
+      e.className = "empty";
+      e.innerHTML =
+        "<h2>先把一段真实的沟通放进来</h2>" +
+        "<p>教练只做两件事：判定这段沟通是否有效，指出该往哪儿改。不替你写提示词，也不替 AI 干活。</p>" +
+        "<ol>" +
+        "<li>把你<strong>发给 AI 的原话</strong>（提示词）整段粘贴到下面；</li>" +
+        "<li>或粘贴一段<strong>人机聊天记录</strong>，教练按对话整体判；</li>" +
+        "<li>选风格（默认客观），点「判定」。</li>" +
+        "</ol>" +
+        "<div class=\"no\">判定结果分三级：<strong>有效 / 基本有效 / 无效</strong>。判不了时会直说「无法判定」——后端没交结果，或你贴的压根不是一句请求（比如一句寒暄），都会明说原因，不瞎打分。</div>";
+      feedEl.appendChild(e);
+      return;
+    }
+
+    records.forEach(function (r) {
+      var card = document.createElement("article");
+      card.className = "card" + (r.status === "failed" ? " failed" : "");
+      card.setAttribute("data-id", r.id || r.ts);
+
+      var head = document.createElement("div");
+      head.className = "card-head";
+      head.appendChild(pill(STYLES[r.style] || "客观", "style"));
+      head.appendChild(pill(hhmm(r.ts), ""));
+      if (r.hostLabel) head.appendChild(pill("宿主 · " + r.hostLabel, ""));
+      if (r.examples) head.appendChild(pill("含范例", ""));
+      if (r.status === "failed") head.appendChild(pill("未送达", "st-bad"));
+      if (r.status === "timeout") head.appendChild(pill("无回应", "st-warn"));
+
+      var sp = document.createElement("span");
+      sp.className = "spacer";
+      head.appendChild(sp);
+
+      if (r.status === "ok" && r.answer) {
+        head.appendChild(btn("复制", function () {
+          copyText(r.answer).then(function () { notice(""); flash(head, "已复制"); })
+            .catch(function () { notice("复制失败，请手动选择文本。"); });
+        }));
+      }
+      if (r.status !== "pending") {
+        head.appendChild(btn("重发", function () { resend(r); }));
+        head.appendChild(btn("删除", function () {
+          records = records.filter(function (x) { return x !== r; });
+          save(); render();
+        }));
+      }
+      card.appendChild(head);
+
+      var src = document.createElement("details");
+      src.className = "src";
+      var sum = document.createElement("summary");
+      sum.textContent = "我的输入（" + r.input.length + " 字）";
+      var pre = document.createElement("pre");
+      pre.textContent = r.input;
+      src.appendChild(sum);
+      src.appendChild(pre);
+      card.appendChild(src);
+
+      var body = document.createElement("div");
+      if (r.status === "ok" && r.answer) {
+        body.className = "md";
+        body.innerHTML = md(r.answer);
+      } else if (r.status === "pending") {
+        body.className = "state";
+        body.innerHTML = '<span class="dots">教练正在判定，判定稿会直接回在这里</span>';
+      } else if (r.status === "timeout") {
+        body.className = "state";
+        body.textContent = "超过 3 分钟没有收到判定。可能是宿主会话没在跑、或桥掉了——确认右侧面板的「常驻桥」还在线，然后点「重发」。";
+      } else {
+        body.className = "state";
+        body.textContent = "未送达" + (r.error ? "：" + r.error : "。") + " 检查桥是否在线后点「重发」。";
+      }
+      card.appendChild(body);
+      feedEl.appendChild(card);
+    });
+  }
+
+  function pill(text, cls) {
+    var s = document.createElement("span");
+    s.className = "pill" + (cls ? " " + cls : "");
+    s.textContent = text;
+    return s;
+  }
+  function btn(text, onClick) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "ghost mini";
+    b.textContent = text;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+  function flash(host, text) {
+    var n = document.createElement("span");
+    n.className = "pill st-warn";
+    n.textContent = text;
+    host.appendChild(n);
+    setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, 1400);
+  }
+  function copyText(t) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
+    return Promise.reject(new Error("no clipboard"));
+  }
+
+  /* ---------------- 状态 / SSE ---------------- */
+  function applySnapshot(data) {
+    if (!data || typeof data !== "object") return;
+    lastSnapshot = data;
+    rebuildHostSelect();
+    if (typeof data.pendingCount === "number") {
+      setBadge(queueEl, "队列 " + data.pendingCount, data.pendingCount ? "warn" : "");
+    }
+    render();
+  }
+  function pullState() {
+    return fetch("/web/state")
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); })
+      .then(applySnapshot)
+      .catch(function () { setBadge(connEl, "连不上 server", "bad"); return null; });
+  }
+  function connectSse() {
+    var es = new EventSource("/web/events");
+    es.onopen = function () { setBadge(connEl, "已连接 server", "on"); };
+    es.onerror = function () { setBadge(connEl, "连接中断，重连中…", "warn"); };
+    es.onmessage = function (e) {
+      var data = null;
+      try { data = JSON.parse(e.data); } catch (err) { return; }
+      if (data && data.type === "question") onQuestion(data);
+      else if (data && data.type === "answer") onAnswer(data);
+      else applySnapshot(data);
+    };
+  }
+
+  function onQuestion(ev) {
+    if (records.some(function (r) { return r.id === String(ev.id); })) return;
+    // SSE 可能早于 POST 响应：认领还没拿到服务端 id 的那条本地记录
+    var pending = records.find(function (r) { return r.status === "pending" && !r.id; });
+    if (pending) { pending.id = String(ev.id || ""); save(); render(); return; }
+  }
+
+  function onAnswer(ev) {
+    var r = records.find(function (x) { return x.id === String(ev.id); });
+    if (!r) return;
+    if (r.status === "ok" && r.answer) return; // 幂等：同一条只收一次
+    r.answer = String(ev.answer == null ? "" : ev.answer);
+    r.status = "ok";
+    r.error = "";
+    clearTimer(r);
+    save(); render(); notice("");
+  }
+
+  function clearTimer(r) {
+    if (timers[r.id]) { clearTimeout(timers[r.id]); delete timers[r.id]; }
+  }
+  function armTimer(r) {
+    clearTimer(r);
+    timers[r.id] = setTimeout(function () {
+      var cur = records.find(function (x) { return x === r; });
+      if (cur && cur.status === "pending") { cur.status = "timeout"; save(); render(); }
+    }, WAIT_TIMEOUT_MS);
+  }
+
+  /* ---------------- 提交：先查链路，不通立即报错 ---------------- */
+  function envelope(text, st, examples) {
+    return [
+      "【反向输出师 · 外部网页提交】",
+      "风格：" + st + "（" + STYLES[st] + "）",
+      "范例：" + (examples ? "要" : "不要"),
+      "—— 以下是我要判定的内容 ——",
+      text
+    ].join("\n");
+  }
+
+  async function send(text, existing) {
+    var st = existing ? existing.style : style;
+    var ex = existing ? existing.examples : exampleEl.checked;
+
+    var snap = null;
+    try {
+      var r0 = await fetch("/web/state");
+      if (r0.ok) snap = await r0.json();
+    } catch (err) { snap = null; }
+
+    var rec = existing || {
+      id: "", ts: Date.now(), input: text, style: st, examples: ex,
+      answer: "", error: "", status: "pending", hostId: "", hostLabel: ""
+    };
+
+    if (!snap) {
+      rec.status = "failed";
+      rec.error = "连不上 server（" + location.origin + "）";
+      upsert(rec);
+      notice("连不上 server：桥服务没起或已停止。消息未发送。");
+      return;
+    }
+    applySnapshot(snap);
+
+    var target = currentTarget();
+    if (!target.host) {
+      rec.status = "failed";
+      rec.error = "当前没有在线宿主";
+      upsert(rec);
+      notice("链路不通：当前没有在线宿主。去宿主会话里打开「常驻桥」（让助手调用 render_bridge_view），再点「重发」。");
+      return;
+    }
+    rec.hostId = target.host.id;
+    rec.hostLabel = target.host.label;
+    rec.status = "pending";
+    rec.error = "";
+    rec.id = "";
+    upsert(rec);
+    notice(target.auto && userHostId ? "原宿主已离线，本条改发给「" + target.host.label + "」。" : "");
+
+    sendBtn.disabled = true;
+    try {
+      var res = await fetch("/web/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: envelope(text, st, ex), hostId: rec.hostId })
+      });
+      var data = await res.json().catch(function () { return null; });
+      if (!res.ok || !data || !data.ok) {
+        rec.status = "failed";
+        rec.error = (data && data.error) || ("HTTP " + res.status);
+        save(); render();
+        notice("提交失败：" + rec.error);
+        return;
+      }
+      rec.id = String(data.id);
+      save(); render();
+      armTimer(rec);
+    } catch (err) {
+      rec.status = "failed";
+      rec.error = err && err.message ? err.message : String(err);
+      save(); render();
+      notice("提交失败：" + rec.error);
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  function upsert(rec) {
+    var idx = records.indexOf(rec);
+    if (idx < 0) { records.unshift(rec); idx = 0; }
+    save(); render();
+    if (idx === 0) feedEl.parentNode.scrollTop = 0;
+  }
+
+  function resend(r) {
+    if (r.status === "pending") return;
+    r.answer = "";
+    send(r.input, r);
+  }
+
+  formEl.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = inputEl.value.trim();
+    if (!text) { notice("先把要判定的内容粘贴进来。"); return; }
+    inputEl.value = "";
+    autosize();
+    send(text, null);
+  });
+
+  inputEl.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      formEl.dispatchEvent(new Event("submit", { cancelable: true }));
+    }
+  });
+
+  chipsEl.addEventListener("click", function (e) {
+    var b = e.target.closest(".chip");
+    if (!b) return;
+    style = b.getAttribute("data-style");
+    Array.prototype.forEach.call(chipsEl.children, function (c) {
+      c.classList.toggle("on", c === b);
+    });
+  });
+
+  function autosize() {
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 260) + "px";
+  }
+  inputEl.addEventListener("input", autosize);
+
+  document.getElementById("sync").addEventListener("click", function () { pullState(); notice(""); });
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!records.length) return;
+    if (!window.confirm("清空本浏览器里的判定记录？（不影响宿主会话，也不影响服务端）")) return;
+    records = []; save(); render(); notice("");
+  });
+
+  /* ---------------- 启动 ---------------- */
+  load();
+  loadHostChoice();
+  render();
+  pullState();
+  connectSse();
+  // 心跳式刷新：桥掉线/宿主离线要能自己反映到徽章上
+  setInterval(pullState, 12000);
+})();
+</script>
+</body>
+</html>
