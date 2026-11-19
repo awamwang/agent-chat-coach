@@ -1,0 +1,36 @@
+{
+  "_readme": "awam-skill-eval 生成：意图路由评测集。正例=描述触发场景；负例=confusable sibling 的「看起来像但不该触发」边界例。只读评测资产。",
+  "_skill": "agent-chat-coach",
+  "_n_pos": 4,
+  "_n_neg": 3,
+  "queries": [
+    {
+      "text": "帮我看看这个 prompt 写得好不好",
+      "expect_trigger": true
+    },
+    {
+      "text": "这段沟通有没有问题，用反向输出师点评一下",
+      "expect_trigger": true
+    },
+    {
+      "text": "帮我诊断下我发给 AI 的提示词",
+      "expect_trigger": true
+    },
+    {
+      "text": "用沟通教练评价一下这段对话",
+      "expect_trigger": true
+    },
+    {
+      "text": "帮我写一个更好的 prompt",
+      "expect_trigger": false
+    },
+    {
+      "text": "把这段话翻译成英文",
+      "expect_trigger": false
+    },
+    {
+      "text": "帮我把这段聊天记录总结成要点",
+      "expect_trigger": false
+    }
+  ]
+}

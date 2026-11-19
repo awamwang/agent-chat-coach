@@ -1,0 +1,57 @@
+{
+  "metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "tp": 4,
+    "fp": 0,
+    "fn": 0,
+    "tn": 3
+  },
+  "question": null,
+  "rows": [
+    {
+      "text": "帮我看看这个 prompt 写得好不好",
+      "expect": true,
+      "predicted": true,
+      "raw": "yes"
+    },
+    {
+      "text": "这段沟通有没有问题，用反向输出师点评一下",
+      "expect": true,
+      "predicted": true,
+      "raw": "yes"
+    },
+    {
+      "text": "帮我诊断下我发给 AI 的提示词",
+      "expect": true,
+      "predicted": true,
+      "raw": "yes"
+    },
+    {
+      "text": "用沟通教练评价一下这段对话",
+      "expect": true,
+      "predicted": true,
+      "raw": "yes"
+    },
+    {
+      "text": "帮我写一个更好的 prompt",
+      "expect": false,
+      "predicted": false,
+      "raw": "no"
+    },
+    {
+      "text": "把这段话翻译成英文",
+      "expect": false,
+      "predicted": false,
+      "raw": "no"
+    },
+    {
+      "text": "帮我把这段聊天记录总结成要点",
+      "expect": false,
+      "predicted": false,
+      "raw": "no"
+    }
+  ]
+}
